@@ -168,3 +168,79 @@ class RouteClassificationRequest(BaseModel):
 class RouteClassificationResponse(BaseModel):
     query: str
     selected_module: str
+
+# Module 6 Models (Mock Interview Room with Council Pattern & MediaPipe)
+class StartInterviewRequest(BaseModel):
+    role: str = Field("Full-Stack Engineer", description="Target role")
+    company_name: Optional[str] = Field("Google", description="Target company")
+    round_type: Optional[str] = Field("technical", description="'technical', 'behavioral', 'system_design', or 'case'")
+    jd_text: Optional[str] = Field(None, description="Optional target JD text")
+    interviewer_persona: Optional[str] = Field("friendly_bar_raiser", description="Interviewer persona")
+    total_planned_turns: Optional[int] = Field(4, description="Target turns (3-5)")
+
+class StartInterviewResponse(BaseModel):
+    session_id: str
+    turn_index: int
+    total_planned_turns: int
+    question: str
+    round_type: str
+    role: str
+    company_name: str
+    interviewer_persona: str
+    guidance: str
+
+class PostureMetrics(BaseModel):
+    uprightness_score: float = Field(..., description="0-100 upright spine/head alignment")
+    eye_contact_score: float = Field(..., description="0-100 central gaze focus")
+    stability_score: float = Field(..., description="0-100 composure vs jitter")
+    posture_label: str = Field(..., description="E.g. Optimal, Slouching, Looking Away")
+    recommendations: List[str] = Field(default_factory=list)
+
+class TurnFeedback(BaseModel):
+    turn_score: float
+    strengths: List[str]
+    weaknesses: List[str]
+    star_alignment: Dict[str, str] = Field(default_factory=dict)
+    coaching_tips: str
+
+class SubmitAnswerRequest(BaseModel):
+    session_id: str
+    turn_index: int
+    answer_text: str
+    posture_metrics: Optional[PostureMetrics] = None
+    frame_base64: Optional[str] = None
+
+class SubmitAnswerResponse(BaseModel):
+    session_id: str
+    turn_index: int
+    feedback: TurnFeedback
+    next_question: Optional[str] = None
+    is_final_turn: bool = False
+
+class PoseAnalysisRequest(BaseModel):
+    frame_base64: str
+
+class PoseAnalysisResponse(BaseModel):
+    metrics: PostureMetrics
+
+class CouncilPass(BaseModel):
+    evaluator_name: str
+    perspective: str
+    evaluation: str
+    score: float
+
+class FinalVerdictResponse(BaseModel):
+    session_id: str
+    role: str
+    company_name: str
+    round_type: str
+    overall_score: float
+    hiring_recommendation: str
+    dimension_scores: Dict[str, float]
+    key_strengths: List[str]
+    critical_improvements: List[str]
+    executive_summary: str
+    council_deliberation: List[CouncilPass]
+    turns_summary: List[Dict[str, Any]]
+    created_at: str
+

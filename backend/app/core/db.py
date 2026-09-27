@@ -52,6 +52,37 @@ def init_sqlite():
     )
     """)
 
+    # Mock Interview Sessions (Module 6 - Phase 3)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS interview_sessions (
+        id TEXT PRIMARY KEY,
+        role TEXT NOT NULL,
+        company_name TEXT,
+        round_type TEXT,
+        overall_score REAL,
+        verdict TEXT,
+        hiring_recommendation TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        summary_json TEXT
+    )
+    """)
+
+    # Mock Interview Individual Turns (Module 6 - Phase 3)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS interview_turns (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        turn_number INTEGER NOT NULL,
+        question TEXT NOT NULL,
+        answer TEXT,
+        turn_score REAL,
+        feedback TEXT,
+        posture_metrics TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(session_id) REFERENCES interview_sessions(id)
+    )
+    """)
+
     conn.commit()
 
     # Seed initial real-world question bank if empty

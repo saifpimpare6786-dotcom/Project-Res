@@ -12,6 +12,8 @@ from app.agents.ats_scorer import ats_scorer_agent
 from app.agents.qualitative_reviewer import qualitative_reviewer_agent
 from app.agents.company_researcher import company_researcher_agent
 from app.agents.case_study_rag import case_study_rag_agent
+from app.agents.interview_conductor import interview_conductor
+from app.agents.council_verdict import council_verdict_agent
 
 def router_node(state: PlatformState) -> Dict[str, Any]:
     """
@@ -32,7 +34,7 @@ def router_node(state: PlatformState) -> Dict[str, Any]:
 def route_condition(state: PlatformState) -> str:
     """Conditional edge returning the destination node based on module."""
     module = state.get("module", "trend_engine")
-    valid_modules = ["trend_engine", "resume_match", "company_research", "case_study"]
+    valid_modules = ["trend_engine", "resume_match", "company_research", "case_study", "mock_interview"]
     if module in valid_modules:
         return module
     return "trend_engine"
@@ -93,14 +95,42 @@ def case_study_node(state: PlatformState) -> Dict[str, Any]:
         "final_output": ans.model_dump()
     }
 
+def mock_interview_node(state: PlatformState) -> Dict[str, Any]:
+    """Module 6: Mock Interview Room Graph Node."""
+    role = state.get("raw_query") or "Full-Stack Engineer"
+    company = state.get("company_name") or "Google"
+    history = state.get("interview_history", [])
+    
+    if not history:
+        # Initialize turn 1
+        q_data = interview_conductor.generate_initial_question(role, company, "technical")
+        turn_item = {"turn_number": 1, "question": q_data["question"], "answer": "", "turn_score": 0.0}
+        return {
+            "interview_history": [turn_item],
+            "final_output": {"turn_index": 1, "question": q_data["question"], "guidance": q_data["guidance"]}
+        }
+    else:
+        # Deliberate verdict if turns exist
+        verdict = council_verdict_agent.deliberate_verdict(
+            session_id=state.get("session_id", "local_session"),
+            role=role,
+            company_name=company,
+            round_type="technical",
+            turns=history
+        )
+        return {
+            "final_output": verdict.model_dump()
+        }
+
 def create_platform_graph():
-    """Builds and compiles the expanded LangGraph state graph for Phase 1 & 2."""
+    """Builds and compiles the expanded LangGraph state graph for Phase 1, 2 & 3."""
     builder = StateGraph(PlatformState)
     builder.add_node("router", router_node)
     builder.add_node("trend_engine", trend_engine_node)
     builder.add_node("resume_match", resume_match_node)
     builder.add_node("company_research", company_research_node)
     builder.add_node("case_study", case_study_node)
+    builder.add_node("mock_interview", mock_interview_node)
 
     builder.set_entry_point("router")
     builder.add_conditional_edges(
@@ -111,12 +141,14 @@ def create_platform_graph():
             "resume_match": "resume_match",
             "company_research": "company_research",
             "case_study": "case_study",
+            "mock_interview": "mock_interview",
         }
     )
     builder.add_edge("trend_engine", END)
     builder.add_edge("resume_match", END)
     builder.add_edge("company_research", END)
     builder.add_edge("case_study", END)
+    builder.add_edge("mock_interview", END)
 
     return builder.compile()
 
