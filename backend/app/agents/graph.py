@@ -10,6 +10,8 @@ from app.agents.resume_parser import resume_parser_agent
 from app.agents.jd_parser import jd_parser_agent
 from app.agents.ats_scorer import ats_scorer_agent
 from app.agents.qualitative_reviewer import qualitative_reviewer_agent
+from app.agents.company_researcher import company_researcher_agent
+from app.agents.case_study_rag import case_study_rag_agent
 
 def router_node(state: PlatformState) -> Dict[str, Any]:
     """
@@ -30,26 +32,16 @@ def router_node(state: PlatformState) -> Dict[str, Any]:
 def route_condition(state: PlatformState) -> str:
     """Conditional edge returning the destination node based on module."""
     module = state.get("module", "trend_engine")
-    if module in ["trend_engine", "resume_match"]:
+    valid_modules = ["trend_engine", "resume_match", "company_research", "case_study"]
+    if module in valid_modules:
         return module
     return "trend_engine"
 
 def trend_engine_node(state: PlatformState) -> Dict[str, Any]:
-    """
-    Module 1: Production GD & Interview Trend Engine Graph Node.
-    1. Scrapes legal sources (RSS, Reddit, YouTube).
-    2. Verifies empirical stats & filters noise.
-    3. Synthesizes 3-stance talking-point card with citations.
-    """
+    """Module 1: Production GD & Interview Trend Engine Graph Node."""
     topic = state.get("raw_query") or "Technology & AI in India"
-    
-    # 1. Scrape
     scraped = scraper_hub.aggregate_sources(topic)
-    
-    # 2. Verify
     verified = verifier_agent.verify_items(topic, scraped)
-    
-    # 3. Summarize
     card_data = summarizer_agent.generate_gd_card(topic, verified)
     
     return {
@@ -59,27 +51,14 @@ def trend_engine_node(state: PlatformState) -> Dict[str, Any]:
     }
 
 def resume_match_node(state: PlatformState) -> Dict[str, Any]:
-    """
-    Module 2: Resume ATS Score + JD Match Graph Node.
-    1. Parses resume text (+ additional context) into structured profile.
-    2. Parses JD into structured requirements.
-    3. Calculates deterministic, explainable ATS score.
-    4. Generates qualitative LLM narrative review and STAR/XYZ phrasing.
-    """
+    """Module 2: Resume ATS Score + JD Match Graph Node."""
     resume_text = state.get("resume_text") or ""
     jd_text = state.get("jd_text") or ""
     company = state.get("company_name") or "Target Company"
     
-    # 1. Parse Resume
     resume_prof = resume_parser_agent.parse(resume_text)
-    
-    # 2. Parse JD
     jd_prof = jd_parser_agent.parse(jd_text, company)
-    
-    # 3. ATS Score (Deterministic)
     ats_res = ats_scorer_agent.calculate_score(resume_prof, jd_prof)
-    
-    # 4. Qualitative Review
     review = qualitative_reviewer_agent.review(resume_prof, jd_prof, ats_res)
     
     final_payload = {
@@ -96,12 +75,32 @@ def resume_match_node(state: PlatformState) -> Dict[str, Any]:
         "final_output": final_payload
     }
 
+def company_research_node(state: PlatformState) -> Dict[str, Any]:
+    """Module 3: Company Research Briefing Graph Node."""
+    company = state.get("company_name") or state.get("raw_query") or "Target Company"
+    briefing = company_researcher_agent.generate_briefing(company, "Software Engineer")
+    return {
+        "company_name": company,
+        "final_output": briefing
+    }
+
+def case_study_node(state: PlatformState) -> Dict[str, Any]:
+    """Module 4: Case Study & Guesstimation RAG Graph Node."""
+    prompt = state.get("raw_query") or "How to increase profitability for a retail store?"
+    ans = case_study_rag_agent.solve_case(prompt)
+    return {
+        "retrieved_case_chunks": [c.model_dump() for c in ans.citations],
+        "final_output": ans.model_dump()
+    }
+
 def create_platform_graph():
-    """Builds and compiles the core LangGraph state graph for Phase 1."""
+    """Builds and compiles the expanded LangGraph state graph for Phase 1 & 2."""
     builder = StateGraph(PlatformState)
     builder.add_node("router", router_node)
     builder.add_node("trend_engine", trend_engine_node)
     builder.add_node("resume_match", resume_match_node)
+    builder.add_node("company_research", company_research_node)
+    builder.add_node("case_study", case_study_node)
 
     builder.set_entry_point("router")
     builder.add_conditional_edges(
@@ -110,10 +109,14 @@ def create_platform_graph():
         {
             "trend_engine": "trend_engine",
             "resume_match": "resume_match",
+            "company_research": "company_research",
+            "case_study": "case_study",
         }
     )
     builder.add_edge("trend_engine", END)
     builder.add_edge("resume_match", END)
+    builder.add_edge("company_research", END)
+    builder.add_edge("case_study", END)
 
     return builder.compile()
 

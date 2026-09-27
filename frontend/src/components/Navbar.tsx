@@ -39,6 +39,7 @@ export default function Navbar() {
     { href: "/resume", label: "Resume ATS Match" },
     { href: "/company", label: "Company Briefings" },
     { href: "/case-studies", label: "Case Study RAG" },
+    { href: "/question-bank", label: "Question Bank" },
     { href: "/interview", label: "Mock Interview Room" },
   ];
 

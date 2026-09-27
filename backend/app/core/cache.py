@@ -57,4 +57,57 @@ class TrendCache:
         except Exception as e:
             print(f"[TrendCache] Write error: {e}")
 
+class CompanyCache:
+    """
+    Local SQLite cache for Company Research Briefings with configurable TTL (24 hours).
+    """
+    def __init__(self, ttl_hours: int = 24):
+        self.ttl = timedelta(hours=ttl_hours)
+
+    def get(self, company_name: str) -> Optional[Dict[str, Any]]:
+        clean_key = company_name.strip().lower()
+        try:
+            conn = sqlite3.connect(settings.SQLITE_PATH)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT briefing_json, created_at FROM company_cache WHERE company_name = ?",
+                (clean_key,)
+            )
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                briefing_json, created_at_str = row
+                created_at = datetime.fromisoformat(created_at_str)
+                if datetime.utcnow() - created_at < self.ttl:
+                    data = json.loads(briefing_json)
+                    data["cached"] = True
+                    data["cache_age_hours"] = round((datetime.utcnow() - created_at).total_seconds() / 3600, 1)
+                    return data
+        except Exception as e:
+            print(f"[CompanyCache] Read error: {e}")
+        return None
+
+    def set(self, company_name: str, briefing_data: Dict[str, Any]):
+        clean_key = company_name.strip().lower()
+        now_str = datetime.utcnow().isoformat()
+        try:
+            conn = sqlite3.connect(settings.SQLITE_PATH)
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO company_cache (company_name, briefing_json, created_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(company_name) DO UPDATE SET
+                    briefing_json=excluded.briefing_json,
+                    created_at=excluded.created_at
+                """,
+                (clean_key, json.dumps(briefing_data), now_str)
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"[CompanyCache] Write error: {e}")
+
 trend_cache = TrendCache()
+company_cache = CompanyCache()

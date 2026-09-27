@@ -97,7 +97,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section style={{ textAlign: "center", marginBottom: "3.5rem", marginTop: "1rem" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-          <span className="badge badge-purple">Phase 0 Complete & Operational</span>
+          <span className="badge badge-purple">Phase 1 & 2 Complete • MVP & Grounded Intelligence</span>
           <span className="privacy-badge">Zero Cloud Leakage • 100% On-Device</span>
         </div>
         <h1 style={{ fontSize: "2.75rem", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: "1rem", lineHeight: 1.2 }}>
