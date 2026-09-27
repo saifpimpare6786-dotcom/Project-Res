@@ -90,6 +90,24 @@ export default function HomePage() {
       badgeColor: "badge-cyan",
       icon: "🎙️",
     },
+    {
+      num: "07",
+      title: "Resume Portal",
+      desc: "Student workspace to draft, version, and submit resumes. JD-optimized rewrites via Module 2 agents.",
+      href: "/portal",
+      badge: "Module 7 · Phase 4",
+      badgeColor: "badge-emerald",
+      icon: "🗂️",
+    },
+    {
+      num: "08",
+      title: "Placement Cell Dashboard",
+      desc: "TPO analytics hub: batch readiness scores, shortlisting table, JD bank management. Role-gated.",
+      href: "/admin/dashboard",
+      badge: "Module 8 · TPO Only",
+      badgeColor: "badge-amber",
+      icon: "📈",
+    },
   ];
 
   return (
@@ -97,7 +115,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section style={{ textAlign: "center", marginBottom: "3.5rem", marginTop: "1rem" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-          <span className="badge badge-purple">Phase 1 & 2 Complete • MVP & Grounded Intelligence</span>
+          <span className="badge badge-purple">Phases 1–4 Complete • Institutional Features Live</span>
           <span className="privacy-badge">Zero Cloud Leakage • 100% On-Device</span>
         </div>
         <h1 style={{ fontSize: "2.75rem", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: "1rem", lineHeight: 1.2 }}>

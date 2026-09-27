@@ -5,10 +5,15 @@ from pydantic_settings import BaseSettings
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Placement Prep & GD Platform"
-    APP_VERSION: str = "0.1.0"
+    APP_NAME: str = "PrepSphere AI"
+    APP_VERSION: str = "0.2.0"  # Phase 4 - Institutional Features
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+
+    # Auth settings (Phase 4)
+    SECRET_KEY: str = "prepsphere-local-dev-secret-change-in-production-phase4"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8-hour sessions for placement day
 
     # Server settings
     HOST: str = "127.0.0.1"

@@ -83,7 +83,90 @@ def init_sqlite():
     )
     """)
 
+    # ─── Phase 4: Auth & Institutional Tables ──────────────────────────────────
+
+    # Students table (Module 7 + Module 8)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS students (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        hashed_password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'student',
+        batch TEXT,
+        branch TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP
+    )
+    """)
+
+    # Resumes table — student-authored, explicitly saved (Module 7)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS resumes (
+        id TEXT PRIMARY KEY,
+        student_id TEXT NOT NULL,
+        title TEXT,
+        content TEXT NOT NULL,
+        version INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'draft',
+        ats_score REAL,
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(student_id) REFERENCES students(id)
+    )
+    """)
+
+    # JD-Optimized Resumes (Module 7 — resume optimization for specific JDs)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS jd_optimized_resumes (
+        id TEXT PRIMARY KEY,
+        resume_id TEXT NOT NULL,
+        jd_id TEXT,
+        jd_title TEXT,
+        company_name TEXT,
+        optimized_content TEXT,
+        skill_gaps TEXT,
+        optimization_score REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(resume_id) REFERENCES resumes(id)
+    )
+    """)
+
+    # Anonymized Scores (Module 8 — peer benchmarking, privacy-preserved)
+    # student_hash = irreversible SHA-256 of student_id (never stores plaintext ID)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS anonymized_scores (
+        id TEXT PRIMARY KEY,
+        student_hash TEXT NOT NULL,
+        student_id TEXT NOT NULL,
+        jd_id TEXT,
+        company_name TEXT,
+        role TEXT,
+        ats_score REAL,
+        interview_score REAL,
+        overall_readiness REAL,
+        computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # JD Bank — shared JD registry for placement season (Module 7/8)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS jd_bank (
+        id TEXT PRIMARY KEY,
+        company_name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        jd_text TEXT NOT NULL,
+        batch TEXT,
+        branch TEXT,
+        deadline TEXT,
+        active INTEGER DEFAULT 1,
+        created_by TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
+
 
     # Seed initial real-world question bank if empty
     cursor.execute("SELECT COUNT(*) FROM question_bank")

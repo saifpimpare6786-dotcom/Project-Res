@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.router import fast_router
-from app.routers import health, trend, resume, company, case_study, question_bank, interview
+from app.routers import health, trend, resume, company, case_study, question_bank, interview, auth, portal, admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,6 +36,9 @@ app.include_router(company.router)
 app.include_router(case_study.router)
 app.include_router(question_bank.router)
 app.include_router(interview.router)
+app.include_router(auth.router)
+app.include_router(portal.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def root():
@@ -43,7 +46,7 @@ def root():
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "online",
-        "phase": "Phase 3 (Mock Interview Room & Council Deliberation)",
+        "phase": "Phase 4 (Institutional: Auth + Resume Portal + TPO Analytics)",
         "docs_url": "/docs"
     }
 

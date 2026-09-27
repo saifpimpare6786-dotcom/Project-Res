@@ -244,3 +244,149 @@ class FinalVerdictResponse(BaseModel):
     turns_summary: List[Dict[str, Any]]
     created_at: str
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 4: Auth Models (Module 7 & 8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class StudentRegisterRequest(BaseModel):
+    name: str = Field(..., description="Full name")
+    email: str = Field(..., description="College email address")
+    password: str = Field(..., min_length=8, description="Password (min 8 chars)")
+    batch: Optional[str] = Field(None, description="Graduation year, e.g. '2025'")
+    branch: Optional[str] = Field(None, description="Branch/dept, e.g. 'CSE'")
+    role: Optional[str] = Field("student", description="'student' or 'tpo'")
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    name: str
+    role: str
+    email: str
+
+class UserProfileResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    batch: Optional[str] = None
+    branch: Optional[str] = None
+    created_at: str
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 4: Resume Portal Models (Module 7)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ResumeCreateRequest(BaseModel):
+    title: str = Field("My Resume", description="Resume title / version label")
+    content: str = Field(..., description="Full resume text content")
+
+class ResumeUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    status: Optional[str] = None  # 'draft' | 'submitted'
+
+class ResumeRecord(BaseModel):
+    id: str
+    student_id: str
+    title: str
+    content: str
+    version: int
+    status: str
+    ats_score: Optional[float] = None
+    last_updated: str
+    created_at: str
+
+class JDOptimizeRequest(BaseModel):
+    resume_id: str
+    jd_id: Optional[str] = None
+    jd_title: str = Field("Target Role", description="Target job title")
+    company_name: str = Field("Target Company")
+    jd_text: str = Field(..., description="Full JD text to optimize against")
+
+class JDOptimizedResume(BaseModel):
+    id: str
+    resume_id: str
+    jd_title: str
+    company_name: str
+    optimized_content: str
+    skill_gaps: List[str]
+    optimization_score: float
+    created_at: str
+
+class JDRecord(BaseModel):
+    id: str
+    company_name: str
+    role: str
+    jd_text: str
+    batch: Optional[str] = None
+    branch: Optional[str] = None
+    deadline: Optional[str] = None
+    active: bool
+    created_at: str
+
+class JDCreateRequest(BaseModel):
+    company_name: str
+    role: str
+    jd_text: str
+    batch: Optional[str] = None
+    branch: Optional[str] = None
+    deadline: Optional[str] = None
+
+class SaveScoreRequest(BaseModel):
+    jd_id: Optional[str] = None
+    company_name: str
+    role: str
+    ats_score: Optional[float] = None
+    interview_score: Optional[float] = None
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 4: Placement Cell Analytics (Module 8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class StudentReadinessStats(BaseModel):
+    """Student-facing: own scores and anonymized peer stats only."""
+    own_ats_score: Optional[float] = None
+    own_interview_score: Optional[float] = None
+    own_overall_readiness: Optional[float] = None
+    own_rank: Optional[int] = None
+    own_percentile: Optional[float] = None
+    batch_average_ats: Optional[float] = None
+    batch_average_interview: Optional[float] = None
+    total_students_in_batch: int = 0
+    company_name: Optional[str] = None
+    role: Optional[str] = None
+
+class TPOStudentRecord(BaseModel):
+    """TPO-facing: named record for shortlisting decisions only."""
+    student_id: str
+    name: str
+    email: str
+    batch: Optional[str] = None
+    branch: Optional[str] = None
+    ats_score: Optional[float] = None
+    interview_score: Optional[float] = None
+    overall_readiness: Optional[float] = None
+    resume_status: str = "No Resume"
+    company_name: Optional[str] = None
+    role: Optional[str] = None
+    computed_at: Optional[str] = None
+
+class BatchAnalyticsResponse(BaseModel):
+    """TPO dashboard: aggregate placement analytics for a batch."""
+    total_students: int
+    students_with_resume: int
+    students_with_interview: int
+    batch_average_ats: float
+    batch_average_interview: float
+    batch_average_readiness: float
+    top_companies_applied: List[str]
+    readiness_distribution: Dict[str, int]  # {"Strong Hire": 3, "Hire": 8, "Lean Hire": 12, ...}
+    students: List[TPOStudentRecord]
+
+
