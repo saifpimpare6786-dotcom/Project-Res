@@ -13,7 +13,8 @@ class QualitativeReviewerAgent:
         self,
         resume_profile: Dict[str, Any],
         jd_requirements: Dict[str, Any],
-        ats_score_data: Dict[str, Any]
+        ats_score_data: Dict[str, Any],
+        skip_llm: bool = False
     ) -> QualitativeReview:
         matched = ats_score_data["breakdown"].matched_skills
         missing = ats_score_data["breakdown"].missing_skills
@@ -21,7 +22,8 @@ class QualitativeReviewerAgent:
         company = jd_requirements.get("company_name", "Target Company")
         role = jd_requirements.get("role_title", "Software Engineer")
 
-        prompt = f"""You are an elite Tech Career Coach & Former FAANG/Top Tier Indian Placement Interviewer.
+        if not skip_llm:
+            prompt = f"""You are an elite Tech Career Coach & Former FAANG/Top Tier Indian Placement Interviewer.
 Evaluate this candidate's resume for the role: "{role}" at "{company}".
 
 Candidate Resume Summary:
@@ -41,31 +43,31 @@ Provide structured qualitative feedback in JSON format with exactly 4 keys:
 OUTPUT ONLY VALID JSON:
 {{"strengths": [...], "critical_gaps": [...], "phrasing_improvements": [...], "narrative_fit": "..."}}"""
 
-        try:
-            raw_response = ollama_client.chat(
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4,
-                options={"num_predict": 400}
-            )
-
-            clean_json = raw_response.strip()
-            if clean_json.startswith("```json"):
-                clean_json = clean_json[7:]
-            if clean_json.startswith("```"):
-                clean_json = clean_json[3:]
-            if clean_json.endswith("```"):
-                clean_json = clean_json[:-3]
-
-            parsed = json.loads(clean_json.strip())
-            if "strengths" in parsed and "critical_gaps" in parsed:
-                return QualitativeReview(
-                    strengths=parsed["strengths"],
-                    critical_gaps=parsed["critical_gaps"],
-                    phrasing_improvements=parsed.get("phrasing_improvements", []),
-                    narrative_fit=parsed.get("narrative_fit", "")
+            try:
+                raw_response = ollama_client.chat(
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.4,
+                    options={"num_predict": 400}
                 )
-        except Exception as e:
-            print(f"[QualitativeReviewer] LLM generation error: {e}, using grounded synthesis")
+
+                clean_json = raw_response.strip()
+                if clean_json.startswith("```json"):
+                    clean_json = clean_json[7:]
+                if clean_json.startswith("```"):
+                    clean_json = clean_json[3:]
+                if clean_json.endswith("```"):
+                    clean_json = clean_json[:-3]
+
+                parsed = json.loads(clean_json.strip())
+                if "strengths" in parsed and "critical_gaps" in parsed:
+                    return QualitativeReview(
+                        strengths=parsed["strengths"],
+                        critical_gaps=parsed["critical_gaps"],
+                        phrasing_improvements=parsed.get("phrasing_improvements", []),
+                        narrative_fit=parsed.get("narrative_fit", "")
+                    )
+            except Exception as e:
+                print(f"[QualitativeReviewer] LLM generation error: {e}, using grounded synthesis")
 
         # Grounded fallback
         strengths = [

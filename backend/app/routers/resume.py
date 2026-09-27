@@ -32,6 +32,8 @@ async def upload_resume_pdf(file: UploadFile = File(...)):
             character_count=len(extracted_text),
             word_count=len(extracted_text.split())
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF parsing failed: {str(e)}")
 
@@ -90,10 +92,10 @@ def multi_match_resume(req: MultiJDMatchRequest):
     ranking_items: List[JDRankingResult] = []
     details_map: Dict[str, ResumeMatchResponse] = {}
 
-    for jd in req.jds:
+    for idx, jd in enumerate(req.jds):
         jd_profile = jd_parser_agent.parse(jd.jd_text, jd.company_name)
         ats_res = ats_scorer_agent.calculate_score(resume_profile, jd_profile)
-        review = qualitative_reviewer_agent.review(resume_profile, jd_profile, ats_res)
+        review = qualitative_reviewer_agent.review(resume_profile, jd_profile, ats_res, skip_llm=(idx > 0))
 
         score = ats_res["overall_score"]
         # Label fit tier

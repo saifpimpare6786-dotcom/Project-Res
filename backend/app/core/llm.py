@@ -9,7 +9,7 @@ class OllamaClient:
     - Embeddings (nomic-embed-text)
     """
     def __init__(self):
-        self.client = ollama.Client(host=settings.OLLAMA_HOST)
+        self.client = ollama.Client(host=settings.OLLAMA_HOST, timeout=12.0)
         self.model = settings.OLLAMA_MODEL
         self.embed_model = settings.OLLAMA_EMBED_MODEL
 
